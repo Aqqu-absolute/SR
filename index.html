@@ -1,1 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>F1 Lights Out — Reaction Timer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+  <style>
+:root {
+  --bg:#08080a;--bg2:#111114;--bg3:#18181c;--surface:#1c1c21;
+  --border:#2e2e36;--border2:#3f3f50;--text:#f0f0f5;--text2:#a0a0b0;--text3:#555568;
+  --card-sh:0 20px 60px rgba(0,0,0,.7),0 4px 16px rgba(0,0,0,.4);
+  --light-off:#1a1a20;--light-off-b:#2e2e38;
+  --accent:#dc2626;--acl:#ef4444;--acg:rgba(220,38,38,.55);
+  --ticker-bg:#111114;
+}
+body.light {
+  --bg:#ececf2;--bg2:#e0e0ea;--bg3:#d4d4e0;--surface:#ffffff;
+  --border:#c0c0d0;--border2:#9898b0;--text:#10101a;--text2:#40405a;--text3:#8888a0;
+  --card-sh:0 6px 24px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.05);
+  --light-off:#cacad8;--light-off-b:#a8a8c0;--ticker-bg:#e0e0ea;
+}
+body.compound-soft   {--accent:#dc2626;--acl:#ef4444;--acg:rgba(220,38,38,.55);}
+body.compound-medium {--accent:#d97706;--acl:#f59e0b;--acg:rgba(217,119,6,.55);}
+body.compound-hard   {--accent:#9ca3af;--acl:#d1d5db;--acg:rgba(156,163,175,.45);}
+body.compound-inter  {--accent:#16a34a;--acl:#22c55e;--acg:rgba(22,163,74,.55);}
+body.compound-wet    {--accent:#2563eb;--acl:#60a5fa;--acg:rgba(37,99,235,.55);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body {
+  font-family:'Rajdhani','Impact',sans-serif;
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -5%,rgba(220,38,38,.07) 0%,transparent 60%),
+    repeating-linear-gradient(90deg,transparent,transparent 80px,rgba(255,255,255,.013) 80px,rgba(255,255,255,.013) 81px);
+  background-attachment:fixed;color:var(--text);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:1.5rem 1rem 0;user-select:none;transition:background-color .35s,color .35s;
+}
+body.light {
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -5%,rgba(220,38,38,.05) 0%,transparent 55%),
+    repeating-linear-gradient(90deg,transparent,transparent 80px,rgba(0,0,0,.016) 80px,rgba(0,0,0,.016) 81px);
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.wrapper{width:100%;max-width:720px;display:flex;flex-direction:column;align-items:center;padding-bottom:2rem}
+.header{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem}
+.brand{display:flex;align-items:center;gap:.7rem}
+.brand-icon{font-size:1.3rem;line-height:1}
+.brand-title{
+  font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;
+  letter-spacing:.06em;text-transform:uppercase;line-height:1;
+  background:linear-gradient(135deg,var(--text) 55%,var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand-sub{font-size:.58rem;letter-spacing:.38em;text-transform:uppercase;color:var(--accent);margin-top:3px;font-weight:700}
+.btn-theme{
+  display:flex;align-items:center;gap:.4rem;padding:.38rem .8rem;border-radius:999px;
+  border:1.5px solid var(--border2);background-color:var(--surface);
+  color:var(--text2);font-family:inherit;font-weight:700;font-size:.65rem;
+  letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
+  transition:border-color .2s,background-color .2s,color .2s;
+}
+.btn-theme:hover{border-color:var(--text);color:var(--text)}
+.btn-theme svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.compound-bar{width:100%;display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap}
+.compound-label{font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;color:var(--text3);font-weight:700;white-space:nowrap}
+.compound-btns{display:flex;gap:.35rem;flex-wrap:wrap}
+.compound-btn{
+  display:flex;align-items:center;gap:.32rem;padding:.26rem .6rem;border-radius:999px;
+  border:1.5px solid var(--border);background-color:var(--surface);
+  color:var(--text2);font-family:inherit;font-size:.6rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .18s;
+}
+.compound-btn:hover{border-color:var(--border2);color:var(--text)}
+.cdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.15)}
+.ds{background:#dc2626}.dm{background:#d97706}.dh{background:#9ca3af}.di{background:#16a34a}.dw{background:#2563eb}
+.compound-btn[data-c=soft].active  {border-color:#dc2626;background:rgba(220,38,38,.13);color:#f87171}
+.compound-btn[data-c=medium].active{border-color:#d97706;background:rgba(217,119,6,.13);color:#fbbf24}
+.compound-btn[data-c=hard].active  {border-color:#9ca3af;background:rgba(156,163,175,.13);color:#d1d5db}
+.compound-btn[data-c=inter].active {border-color:#16a34a;background:rgba(22,163,74,.13);color:#4ade80}
+.compound-btn[data-c=wet].active   {border-color:#2563eb;background:rgba(37,99,235,.13);color:#60a5fa}
+.gantry-wrap{position:relative;width:100%;cursor:default;transition:transform .08s}
+.gantry-wrap.clickable{cursor:pointer}
+.gantry-wrap.clickable:active{transform:scale(.987)}
+.gantry{
+  position:relative;background-color:var(--surface);
+  border:1.5px solid var(--border);border-radius:1.2rem;
+  padding:1.6rem 2.2rem 1.2rem;box-shadow:var(--card-sh);overflow:visible;
+  transition:background-color .35s,border-color .35s;
+}
+.gantry::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.012) 3px,rgba(255,255,255,.012) 6px);
+  pointer-events:none;
+}
+body.light .gantry::before{background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,.018) 3px,rgba(0,0,0,.018) 6px)}
+.gantry-bar{position:absolute;top:-7px;left:20px;right:20px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--border2),var(--border),var(--border2))}
+.gantry-leg{position:absolute;top:-30px;width:5px;height:28px;border-radius:3px;background:var(--border2)}
+.gantry-leg.l{left:40px}.gantry-leg.r{right:40px}
+.bolt{position:absolute;top:-13px;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border2);background-color:var(--bg3)}
+.bolt::before,.bolt::after{content:'';position:absolute;background:var(--border2);border-radius:1px}
+.bolt::before{width:1px;height:7px;top:2px;left:5px}
+.bolt::after{width:7px;height:1px;top:5px;left:2px}
+.lights-row{display:flex;justify-content:center;gap:1.4rem}
+.light-pair{display:flex;flex-direction:column;align-items:center;gap:9px}
+.light{
+  position:relative;width:54px;height:54px;border-radius:50%;
+  border:2px solid var(--light-off-b);background-color:var(--light-off);
+  box-shadow:inset 0 3px 8px rgba(0,0,0,.5);
+  transition:background-color .11s,border-color .11s,box-shadow .11s;overflow:hidden;
+}
+.light.on{
+  background-color:var(--accent);border-color:var(--acl);
+  box-shadow:0 0 18px 6px var(--acg),0 0 42px 14px var(--acg),inset 0 1px 4px rgba(255,200,200,.25);
+}
+.light.on::before{content:'';position:absolute;inset:5px;border-radius:50%;background:var(--acl);opacity:.28;filter:blur(5px)}
+.light::after{content:'';position:absolute;top:6px;left:6px;width:9px;height:9px;border-radius:50%;background:#fff;opacity:.11;transition:opacity .11s}
+.light.on::after{opacity:.52}
+@keyframes lightPulse{
+  0%,100%{box-shadow:0 0 18px 6px var(--acg),0 0 42px 14px var(--acg),inset 0 1px 4px rgba(255,200,200,.25)}
+  50%    {box-shadow:0 0 28px 10px var(--acg),0 0 60px 20px var(--acg),inset 0 1px 4px rgba(255,200,200,.25)}
+}
+.light.on.pulse{animation:lightPulse .85s ease-in-out infinite}
+.lights-numbers{display:flex;justify-content:center;gap:1.4rem;margin-top:.5rem}
+.light-num{width:54px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.2em}
+.status-wrap{margin-top:1.7rem;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:5px}
+.status-main{font-family:'Orbitron',sans-serif;font-size:2.5rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;line-height:1;transition:color .2s}
+.status-sub{font-size:.67rem;font-weight:700;letter-spacing:.34em;text-transform:uppercase}
+.c-idle{color:var(--text)}.c-seq{color:#facc15}.c-wait{color:#fb923c}.c-react{color:#4ade80}
+.c-res{color:#4ade80}.c-best{color:#facc15}.c-false{color:#ef4444}
+.c-pur{color:#c084fc}.c-blue{color:#60a5fa}.c-zinc{color:var(--text3)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.blink{animation:blink .72s ease-in-out infinite}
+.stats-row{display:flex;flex-wrap:wrap;justify-content:center;gap:.45rem;margin-top:1.1rem}
+.badge{
+  display:flex;align-items:center;gap:.45rem;padding:.4rem .75rem;border-radius:.55rem;
+  border:1.5px solid var(--border);background-color:var(--surface);
+  font-size:.75rem;transition:border-color .2s,background-color .35s;
+}
+.badge.hl{border-color:rgba(250,204,21,.5);background-color:rgba(100,70,0,.14)}
+body.light .badge.hl{background-color:rgba(250,204,21,.1)}
+.badge svg{width:14px;height:14px;fill:none;stroke:var(--text3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.badge.hl svg{stroke:#facc15}
+.bl{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.05em}
+.bv{font-family:'Share Tech Mono',monospace;font-weight:700;color:var(--text)}
+.badge.hl .bv{color:#facc15}
+.card{
+  width:100%;margin-top:.9rem;background-color:var(--surface);
+  border:1.5px solid var(--border);border-radius:1rem;
+  padding:1rem 1.2rem .9rem;box-shadow:var(--card-sh);
+  transition:background-color .35s,border-color .35s;
+}
+.sec-title{
+  font-size:.57rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--text3);font-weight:700;margin-bottom:.7rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.history-bars{display:flex;align-items:flex-end;gap:.45rem;height:64px}
+.hb-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+.hb{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:height .4s ease,background .3s}
+.hb-val{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--text3);text-align:center;height:12px;line-height:12px;white-space:nowrap}
+.h-empty{font-family:'Share Tech Mono',monospace;font-size:.63rem;color:var(--text3);text-align:center;width:100%;padding:.9rem 0}
+.sess-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem}
+.sess-cell{display:flex;flex-direction:column;align-items:center;gap:3px;background-color:var(--bg3);border:1px solid var(--border);border-radius:.45rem;padding:.5rem .35rem;transition:background-color .35s}
+.sc-lbl{font-size:.53rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);font-weight:700}
+.sc-val{font-family:'Share Tech Mono',monospace;font-size:.82rem;font-weight:700;color:var(--text)}
+.sc-val.g{color:#4ade80}.sc-val.y{color:#facc15}.sc-val.r{color:#f87171}
+.dr-row{display:flex;align-items:center;gap:.6rem;padding:.32rem 0;border-bottom:1px solid var(--border)}
+.dr-row:last-child{border-bottom:none}
+.dr-pos{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--text3);width:16px;text-align:right;flex-shrink:0}
+.dr-abbr{font-family:'Orbitron',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.06em;width:30px;color:var(--text);flex-shrink:0}
+.dr-bwrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:visible;position:relative}
+.dr-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.dr-you{position:absolute;top:-2px;height:10px;width:2px;background:#facc15;border-radius:1px;transition:left .4s ease;display:none;box-shadow:0 0 4px #facc15}
+.dr-ms{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--text3);width:42px;text-align:right;flex-shrink:0}
+.you-row{display:flex;align-items:center;gap:.6rem;margin-top:.4rem;padding:.35rem .55rem;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.22);border-radius:.4rem}
+.you-dot{width:8px;height:8px;border-radius:50%;background:#facc15;flex-shrink:0}
+.you-lbl{font-size:.6rem;color:#facc15;font-weight:700;letter-spacing:.15em}
+.you-ms{font-family:'Share Tech Mono',monospace;font-size:.68rem;font-weight:700;color:#facc15}
+.you-rank{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--text3);margin-left:.2rem}
+.ticker-wrap{
+  width:100%;margin-top:.9rem;background-color:var(--ticker-bg);
+  border:1.5px solid var(--border);border-radius:.75rem;overflow:hidden;
+  display:flex;align-items:stretch;transition:background-color .35s,border-color .35s;
+}
+.ticker-tag{background:var(--accent);color:#fff;font-size:.53rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;padding:0 .8rem;display:flex;align-items:center;white-space:nowrap;flex-shrink:0;transition:background .35s}
+.ticker-body{overflow:hidden;flex:1;padding:.5rem 0}
+.ticker-inner{display:inline-flex;gap:3.5rem;white-space:nowrap;animation:tick 80s linear infinite;will-change:transform}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{font-size:.67rem;color:var(--text2);letter-spacing:.04em;flex-shrink:0}
+.ticker-item strong{color:var(--text)}
+.btn-row{display:flex;gap:.7rem;margin-top:1.5rem;align-items:center}
+.btn-start{
+  padding:.72rem 2.3rem;border-radius:.75rem;
+  border:2px solid var(--accent);background-color:var(--accent);color:#fff;
+  font-family:inherit;font-weight:900;font-size:.86rem;letter-spacing:.2em;text-transform:uppercase;
+  cursor:pointer;transition:background-color .15s,box-shadow .15s,transform .08s;
+  box-shadow:0 4px 20px var(--acg);
+}
+.btn-start:hover{background-color:var(--acl);box-shadow:0 0 28px var(--acg)}
+.btn-start:active{transform:scale(.96)}
+.btn-wait{
+  padding:.72rem 2.3rem;border-radius:.75rem;border:2px solid var(--border2);
+  background-color:var(--surface);color:var(--text2);
+  font-family:inherit;font-weight:900;font-size:.86rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .1s;
+}
+.btn-wait:hover{background-color:var(--bg3)}.btn-wait:active{transform:scale(.96)}
+.btn-go{
+  padding:.72rem 2.3rem;border-radius:.75rem;border:2px solid #4ade80;background-color:#15803d;color:#fff;
+  font-family:inherit;font-weight:900;font-size:.86rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;
+  box-shadow:0 0 30px rgba(74,222,128,.45);animation:blink .7s ease-in-out infinite;transition:transform .06s,background-color .1s;
+}
+.btn-go:hover{background-color:#166534}.btn-go:active{transform:scale(.96)}
+.btn-reset{
+  padding:.68rem;border-radius:.75rem;border:2px solid var(--border);
+  background-color:var(--surface);color:var(--text3);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.btn-reset:hover{border-color:var(--text);color:var(--text)}.btn-reset:active{transform:scale(.93)}
+.btn-reset svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.footer{width:100%;margin-top:1.6rem;padding:.9rem 0 1.5rem;display:flex;flex-direction:column;align-items:center;gap:.3rem;border-top:1px solid var(--border)}
+.footer-t{font-size:.57rem;letter-spacing:.26em;text-transform:uppercase;color:var(--text3);text-align:center}
+.footer-s{font-size:.58rem;color:var(--text3);letter-spacing:.09em}
+.footer-s span{color:var(--accent);font-weight:700}
+@media(max-width:540px){
+  .gantry{padding:1.1rem .75rem 1rem}
+  .lights-row,.lights-numbers{gap:.5rem}
+  .light{width:40px;height:40px}.light-num{width:40px}.light-pair{gap:6px}
+  .status-main{font-size:1.85rem}
+  .btn-start,.btn-wait,.btn-go{padding:.62rem 1.35rem;font-size:.78rem}
+  .sess-grid{grid-template-columns:repeat(2,1fr)}
+  .brand-title{font-size:1rem}.gantry-leg{display:none}
+}
+@media(max-width:360px){
+  .light{width:32px;height:32px}.lights-row,.lights-numbers{gap:.32rem}
+  .light-num{width:32px}.status-main{font-size:1.5rem}
+}
 
+.insight-card{
+  width:100%;margin-top:.9rem;
+  background:linear-gradient(135deg,rgba(220,38,38,.055),rgba(250,204,21,.03));
+  border:1.5px solid rgba(220,38,38,.28);border-radius:1rem;
+  padding:1rem 1.2rem .95rem;box-shadow:var(--card-sh);
+  animation:fadeSlideIn .3s ease forwards;
+}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.insight-header{display:flex;align-items:center;gap:.65rem;margin-bottom:.5rem}
+.insight-icon{font-size:1.4rem;line-height:1;flex-shrink:0}
+.insight-title{font-size:.56rem;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.insight-body{font-size:.78rem;color:var(--text2);line-height:1.6}
+.insight-body strong{color:var(--text)}
+.insight-formula{
+  font-family:'Share Tech Mono',monospace;font-size:.66rem;color:#60a5fa;
+  margin-top:.55rem;padding:.42rem .65rem;
+  background:var(--bg3);border-radius:.4rem;border:1px solid var(--border);
+  white-space:pre-wrap;line-height:1.5;
+}
+
+.co2-track-outer{
+  position:relative;height:54px;background:var(--bg3);
+  border-radius:.6rem;border:1px solid var(--border);overflow:hidden;margin:.65rem 0;
+}
+.co2-lane{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border2);transform:translateY(-50%)}
+.co2-lane-dash{
+  position:absolute;top:50%;left:0;right:0;height:2px;transform:translateY(-50%);
+  background:repeating-linear-gradient(90deg,transparent 0,transparent 8px,var(--border) 8px,var(--border) 14px);
+  opacity:.5;
+}
+.co2-flag-start{position:absolute;left:8px;top:6px;font-size:1rem;line-height:1}
+.co2-flag-end{position:absolute;right:8px;top:6px;font-size:1rem;line-height:1}
+.co2-car-sprite{position:absolute;top:50%;transform:translateY(-58%) scaleX(-1);font-size:1.5rem;left:28px;line-height:1;transition:none}
+.co2-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--accent);width:0;border-radius:0 2px 2px 0;opacity:.75}
+.co2-stats{display:flex;justify-content:space-around;flex-wrap:wrap;gap:.45rem;margin-top:.35rem}
+.co2-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.co2-stat-lbl{font-size:.51rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);font-weight:700}
+.co2-stat-val{font-family:'Share Tech Mono',monospace;font-size:.78rem;font-weight:700;color:var(--text)}
+.co2-launch-btn{
+  display:block;width:100%;margin-top:.65rem;padding:.5rem;border-radius:.6rem;
+  border:1.5px solid var(--accent);background:transparent;color:var(--accent);
+  font-family:inherit;font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  cursor:pointer;transition:all .15s;
+}
+.co2-launch-btn:hover:not(:disabled){background:var(--accent);color:#fff}
+.co2-launch-btn:disabled{opacity:.35;cursor:default;border-color:var(--border2);color:var(--text3)}
+
+.pit-grid{display:flex;justify-content:center;gap:.75rem;margin:.65rem 0}
+.pit-bolt-btn{
+  width:62px;height:62px;border-radius:.8rem;
+  border:2px solid var(--border);background:var(--bg3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:1.5rem;position:relative;cursor:default;transition:all .15s;gap:3px;
+}
+.pit-bolt-lbl{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--text3);letter-spacing:.1em}
+.pit-bolt-btn.active{
+  border-color:#facc15;background:rgba(250,204,21,.1);
+  box-shadow:0 0 22px rgba(250,204,21,.35);
+  cursor:pointer;animation:blink .5s ease-in-out infinite;
+}
+.pit-bolt-btn.done{border-color:#4ade80;background:rgba(74,222,128,.1);animation:none}
+.pit-bolt-btn.done .pit-bolt-lbl{color:#4ade80}
+.pit-bolt-time{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#4ade80;white-space:nowrap;
+  opacity:0;transition:opacity .2s;
+}
+.pit-bolt-btn.done .pit-bolt-time{opacity:1}
+.pit-stats{display:flex;justify-content:center;gap:1.4rem;flex-wrap:wrap;margin-top:.8rem}
+.pit-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pit-stat-lbl{font-size:.51rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text3);font-weight:700}
+.pit-stat-val{font-family:'Share Tech Mono',monospace;font-size:.9rem;font-weight:700;color:var(--text)}
+.pit-record-row{text-align:center;margin-top:.45rem;font-size:.6rem;color:var(--text3);letter-spacing:.08em}
+.pit-record-row strong{color:#facc15}
+.pit-compare-row{display:flex;justify-content:center;gap:.5rem;margin-top:.45rem;flex-wrap:wrap}
+.pit-compare-chip{
+  font-size:.55rem;padding:.2rem .5rem;border-radius:999px;font-weight:700;letter-spacing:.1em;
+  font-family:'Share Tech Mono',monospace;
+}
+.pit-compare-chip.world{border:1px solid #facc15;color:#facc15;background:rgba(250,204,21,.08)}
+.pit-compare-chip.typical{border:1px solid var(--border);color:var(--text3);background:var(--bg3)}
+.pit-compare-chip.f1s{border:1px solid #60a5fa;color:#60a5fa;background:rgba(96,165,250,.08)}
+.pit-btn{
+  display:block;margin:.7rem auto 0;padding:.42rem 1.2rem;border-radius:.55rem;
+  border:1.5px solid var(--border2);background:var(--surface);
+  color:var(--text2);font-family:inherit;font-size:.62rem;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:all .15s;
+}
+.pit-btn:hover{border-color:var(--text);color:var(--text)}
+
+.stem-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem}
+.stem-cell{background:var(--bg3);border:1px solid var(--border);border-radius:.55rem;padding:.72rem .78rem;transition:background-color .35s,border-color .2s}
+.stem-cell:hover{border-color:var(--border2)}
+.stem-icon{font-size:1.05rem;margin-bottom:.28rem;display:block}
+.stem-cell-title{font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:.3rem}
+.stem-cell-body{font-size:.67rem;color:var(--text2);line-height:1.5}
+.stem-cell-body strong{color:var(--text)}
+.stem-formula{font-family:'Share Tech Mono',monospace;font-size:.59rem;color:#60a5fa;margin-top:.32rem;display:block}
+
+.quiz-score-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem}
+.quiz-score{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.07em}
+.quiz-streak{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:#facc15}
+.quiz-q{font-size:.82rem;color:var(--text);font-weight:600;line-height:1.52;margin-bottom:.65rem}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:.42rem}
+.quiz-opt{
+  padding:.5rem .65rem;border-radius:.5rem;border:1.5px solid var(--border);
+  background:var(--bg3);color:var(--text2);font-family:inherit;font-size:.7rem;
+  font-weight:600;cursor:pointer;text-align:left;transition:all .18s;line-height:1.35;
+}
+.quiz-opt:hover:not(:disabled){border-color:var(--border2);background:var(--surface);color:var(--text)}
+.quiz-opt.correct{border-color:#4ade80;background:rgba(74,222,128,.12);color:#4ade80}
+.quiz-opt.wrong{border-color:#f87171;background:rgba(248,113,113,.1);color:#f87171}
+.quiz-opt.reveal{border-color:#4ade80;background:rgba(74,222,128,.07);color:#4ade80}
+.quiz-exp{
+  font-size:.7rem;color:var(--text2);line-height:1.52;
+  margin-top:.55rem;padding:.48rem .65rem;
+  background:var(--bg3);border-radius:.42rem;border:1px solid var(--border);
+}
+.quiz-exp strong{color:var(--text)}
+.quiz-actions{display:flex;justify-content:flex-end;margin-top:.6rem}
+.quiz-next{
+  padding:.38rem .95rem;border-radius:.5rem;
+  border:1.5px solid var(--accent);background:transparent;color:var(--accent);
+  font-family:inherit;font-size:.62rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:all .15s;
+}
+.quiz-next:hover{background:var(--accent);color:#fff}
+
+@media(max-width:540px){
+  .quiz-opts,.stem-grid{grid-template-columns:1fr}
+  .pit-bolt-btn{width:52px;height:52px;font-size:1.25rem}
+  .co2-car-sprite{font-size:1.2rem}
+  .pit-grid{gap:.5rem}
+}
+  </style>
+</head>
+<body class="compound-soft">
+<div class="wrapper">
+
+<header class="header">
+  <div class="brand">
+    <span class="brand-icon">⚑</span>
+    <div>
+      <div class="brand-title">F1 Lights Out</div>
+      <div class="brand-sub">Reaction Timer</div>
+    </div>
+  </div>
+  <button class="btn-theme" id="themeToggle">
+    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+    <span id="themeLabel">Light</span>
+  </button>
+</header>
+
+<div class="compound-bar">
+  <span class="compound-label">Tyre</span>
+  <div class="compound-btns" id="compoundBtns">
+    <button class="compound-btn active" data-c="soft"><span class="cdot ds"></span>Soft</button>
+    <button class="compound-btn" data-c="medium"><span class="cdot dm"></span>Med</button>
+    <button class="compound-btn" data-c="hard"><span class="cdot dh"></span>Hard</button>
+    <button class="compound-btn" data-c="inter"><span class="cdot di"></span>Inter</button>
+    <button class="compound-btn" data-c="wet"><span class="cdot dw"></span>Wet</button>
+  </div>
+</div>
+
+<div class="gantry-wrap" id="gantryWrap">
+  <div class="gantry">
+    <div class="gantry-bar"></div>
+    <div class="gantry-leg l"></div>
+    <div class="gantry-leg r"></div>
+    <div class="bolt" style="left:11%"></div>
+    <div class="bolt" style="left:30%"></div>
+    <div class="bolt" style="left:50%"></div>
+    <div class="bolt" style="left:70%"></div>
+    <div class="bolt" style="left:87%"></div>
+    <div class="lights-row" id="lightsRow"></div>
+    <div class="lights-numbers" id="lightsNumbers"></div>
+  </div>
+</div>
+
+<div class="status-wrap">
+  <div class="status-main c-idle" id="statusMain">PRESS START</div>
+  <div class="status-sub" id="statusSub"></div>
+  <div class="status-sub" id="statusPR"></div>
+</div>
+
+<div class="stats-row">
+  <div class="badge" id="badgeLast">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span class="bl">LAST</span><span class="bv" id="lastVal">—</span>
+  </div>
+  <div class="badge" id="badgeBest">
+    <svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+    <span class="bl">BEST</span><span class="bv" id="bestVal">—</span>
+  </div>
+  <div class="badge">
+    <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    <span class="bl">RUNS</span><span class="bv" id="runsVal">0</span>
+  </div>
+</div>
+
+<div class="btn-row" id="btnRow"></div>
+
+<div id="insightCard" style="display:none" class="insight-card">
+  <div class="sec-title">STEM Insight</div>
+  <div class="insight-header">
+    <div class="insight-icon" id="insightIcon"></div>
+    <div class="insight-title" id="insightTitle"></div>
+  </div>
+  <div class="insight-body" id="insightBody"></div>
+  <div class="insight-formula" id="insightFormula"></div>
+</div>
+
+<div class="card">
+  <div class="sec-title">Last 8 Reactions</div>
+  <div id="historyBars" class="history-bars">
+    <div class="h-empty">No data yet — complete a run to see your history</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sec-title">Session Stats</div>
+  <div class="sess-grid">
+    <div class="sess-cell"><span class="sc-lbl">Average</span><span class="sc-val" id="statAvg">—</span></div>
+    <div class="sess-cell"><span class="sc-lbl">Worst</span><span class="sc-val r" id="statWorst">—</span></div>
+    <div class="sess-cell"><span class="sc-lbl">Consist.</span><span class="sc-val" id="statConsist">—</span></div>
+    <div class="sess-cell"><span class="sc-lbl">False St.</span><span class="sc-val r" id="statFalse">0</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sec-title">Driver Benchmark</div>
+  <div id="benchmarkRows"></div>
+  <div id="youRow" style="display:none" class="you-row">
+    <div class="you-dot"></div>
+    <span class="you-lbl">YOU</span>
+    <span class="you-ms" id="youTime"></span>
+    <span class="you-rank" id="youRank"></span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sec-title">CO₂ Car Launch — F1 in Schools</div>
+  <div class="co2-track-outer" id="co2TrackOuter">
+    <div class="co2-lane-dash"></div>
+    <div class="co2-lane"></div>
+    <div class="co2-flag-start">🚦</div>
+    <div class="co2-flag-end">🏁</div>
+    <div class="co2-car-sprite" id="co2CarSprite">🏎️</div>
+    <div class="co2-progress" id="co2Progress"></div>
+  </div>
+  <div class="co2-stats">
+    <div class="co2-stat"><span class="co2-stat-lbl">Race Time</span><span class="co2-stat-val" id="co2RaceTime">—</span></div>
+    <div class="co2-stat"><span class="co2-stat-lbl">Top Speed</span><span class="co2-stat-val" id="co2TopSpeed">—</span></div>
+    <div class="co2-stat"><span class="co2-stat-lbl">Peak G</span><span class="co2-stat-val" id="co2PeakG">—</span></div>
+    <div class="co2-stat"><span class="co2-stat-lbl">Distance</span><span class="co2-stat-val">20 m</span></div>
+  </div>
+  <button class="co2-launch-btn" id="co2LaunchBtn" disabled>Complete a Reaction Run to Unlock</button>
+</div>
+
+<div class="card">
+  <div class="sec-title">Pit Stop Challenge</div>
+  <div class="pit-grid" id="pitGrid">
+    <div class="pit-bolt-btn" data-bolt="0"><span>🔩</span><span class="pit-bolt-lbl">FL</span><span class="pit-bolt-time" id="pbt0"></span></div>
+    <div class="pit-bolt-btn" data-bolt="1"><span>🔩</span><span class="pit-bolt-lbl">FR</span><span class="pit-bolt-time" id="pbt1"></span></div>
+    <div class="pit-bolt-btn" data-bolt="2"><span>🔩</span><span class="pit-bolt-lbl">RL</span><span class="pit-bolt-time" id="pbt2"></span></div>
+    <div class="pit-bolt-btn" data-bolt="3"><span>🔩</span><span class="pit-bolt-lbl">RR</span><span class="pit-bolt-time" id="pbt3"></span></div>
+  </div>
+  <div class="pit-stats">
+    <div class="pit-stat"><span class="pit-stat-lbl">Total Time</span><span class="pit-stat-val" id="pitTotal">—</span></div>
+    <div class="pit-stat"><span class="pit-stat-lbl">Best Run</span><span class="pit-stat-val" id="pitBest">—</span></div>
+    <div class="pit-stat"><span class="pit-stat-lbl">Avg / Wheel</span><span class="pit-stat-val" id="pitAvgBolt">—</span></div>
+  </div>
+  <div class="pit-compare-row">
+    <span class="pit-compare-chip world">🏆 WR: 1.82s</span>
+    <span class="pit-compare-chip typical">Typical F1: ~2.5s</span>
+    <span class="pit-compare-chip f1s">F1 in Schools: ~0.7s car</span>
+  </div>
+  <button class="pit-btn" id="pitStartBtn">▶ Start Pit Stop</button>
+</div>
+
+<div class="card">
+  <div class="sec-title">F1 in Schools — STEM Lab</div>
+  <div class="stem-grid">
+    <div class="stem-cell">
+      <span class="stem-icon">🌪️</span>
+      <div class="stem-cell-title">Aerodynamics</div>
+      <div class="stem-cell-body">F1 wings use <strong>Bernoulli's principle</strong>: faster airflow creates lower pressure above, generating downforce. At 250 km/h a car generates over <strong>2,500 kg of downforce</strong> — 2.5× its own weight.<span class="stem-formula">L = ½ρv²CₗA  →  lift (or downforce)</span></div>
+    </div>
+    <div class="stem-cell">
+      <span class="stem-icon">🧱</span>
+      <div class="stem-cell-title">Materials Science</div>
+      <div class="stem-cell-body"><strong>Carbon fibre composites</strong> are 5× stronger than steel at ¼ the weight. F1 in Schools teams CNC-machine cars from aluminium billets or 3D-print in PETG, then sand and finish for <strong>minimum drag coefficient</strong>.<span class="stem-formula">σ = F/A  →  tensile stress (Pa)</span></div>
+    </div>
+    <div class="stem-cell">
+      <span class="stem-icon">📡</span>
+      <div class="stem-cell-title">Data & Electronics</div>
+      <div class="stem-cell-body">Real F1 cars stream <strong>1,500+ sensor channels</strong> live. F1 in Schools uses <strong>photogate timing</strong> — measuring how long a car takes to break an infrared beam at a known position.<span class="stem-formula">v = d/t  →  speed from gate spacing</span></div>
+    </div>
+    <div class="stem-cell">
+      <span class="stem-icon">🔵</span>
+      <div class="stem-cell-title">Physics of Motion</div>
+      <div class="stem-cell-body">CO₂ cars accelerate from 0 to ~40 m/s in ~80ms, experiencing <strong>~20G peak acceleration</strong>. F1 drivers feel 5G+ braking — more than many fighter pilots experience in combat.<span class="stem-formula">G = a/9.81  →  a = Δv/Δt</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sec-title">F1 STEM Quiz</div>
+  <div class="quiz-score-row">
+    <span class="quiz-score" id="quizScoreDisplay">Score: 0 / 0</span>
+    <span class="quiz-streak" id="quizStreak"></span>
+  </div>
+  <div class="quiz-q" id="quizQ"></div>
+  <div class="quiz-opts" id="quizOpts"></div>
+  <div class="quiz-exp" id="quizExp" style="display:none"></div>
+  <div class="quiz-actions">
+    <button class="quiz-next" id="quizNext" style="display:none">Next Question →</button>
+  </div>
+</div>
+
+<div class="ticker-wrap">
+  <div class="ticker-tag">F1 Facts</div>
+  <div class="ticker-body"><div class="ticker-inner" id="tickerInner"></div></div>
+</div>
+
+<div class="footer">
+  <p class="footer-t">Average F1 driver: ~200ms &nbsp;·&nbsp; Human average: ~250ms &nbsp;·&nbsp; FIA false-start threshold: &lt;100ms</p>
+  <p class="footer-s"><span>F1 in Schools</span> — Engineering · Aerodynamics · Design · Marketing · Manufacturing</p>
+</div>
+
+</div>
+<script>
+const NUM_LIGHTS=5, LIGHT_MS=1000, MIN_W=500, MAX_W=3000, MAX_HIS=8;
+
+const DRIVERS=[
+  {abbr:'VER',ms:170,col:'#3671C6'},{abbr:'HAM',ms:179,col:'#27F4D2'},
+  {abbr:'NOR',ms:183,col:'#FF8000'},{abbr:'LEC',ms:185,col:'#E8002D'},
+  {abbr:'SAI',ms:188,col:'#E8002D'},{abbr:'RUS',ms:190,col:'#27F4D2'},
+  {abbr:'PIA',ms:192,col:'#FF8000'},{abbr:'ALO',ms:194,col:'#358C75'},
+  {abbr:'F1S',ms:220,col:'#facc15'},{abbr:'AVG',ms:250,col:'#71717a'},
+];
+const DRIVER_NAMES={VER:'Max Verstappen',HAM:'Lewis Hamilton',NOR:'Lando Norris',LEC:'Charles Leclerc',SAI:'Carlos Sainz',RUS:'George Russell',PIA:'Oscar Piastri',ALO:'Fernando Alonso',F1S:'F1 in Schools Avg',AVG:'Human Average'};
+
+const FACTS=[
+  {tag:'DID YOU KNOW',  t:'F1 drivers react in <strong>~200ms</strong> — roughly the time of a single eye blink.'},
+  {tag:'F1 IN SCHOOLS', t:'F1 in Schools is the world\'s largest STEM challenge, with teams from <strong>50+ countries</strong>.'},
+  {tag:'AERODYNAMICS',  t:'F1 cars generate enough downforce to theoretically drive <strong>upside-down</strong> at 130 km/h.'},
+  {tag:'DID YOU KNOW',  t:'Teams run <strong>CFD simulations</strong> modelling hundreds of millions of airflow particles per design iteration.'},
+  {tag:'F1 IN SCHOOLS', t:'Student teams compete in Enterprise, Design, Manufacture, Marketing and <strong>Verbal Presentation</strong>.'},
+  {tag:'ENGINEERING',   t:'An F1 car has over <strong>80,000 components</strong>. At 99.9% accuracy, ~80 parts would still be wrong.'},
+  {tag:'REACTION TIME', t:'The FIA flags any reaction faster than <strong>100ms</strong> as a false start — below the human nerve threshold.'},
+  {tag:'F1 IN SCHOOLS', t:'F1 in Schools miniature cars travel 20 m in under <strong>1 second</strong> using a CO₂ cartridge.'},
+  {tag:'MATERIALS',     t:'Carbon-fibre composites used in F1 are <strong>lighter than aluminium</strong> yet stronger than structural steel.'},
+  {tag:'DATA',          t:'During a race, an F1 car streams over <strong>1,500 sensor channels</strong> to the pit-wall engineers in real time.'},
+  {tag:'F1 IN SCHOOLS', t:'Roles include Team Manager, Designer, Manufacturer, <strong>Marketing</strong> and Resource Manager.'},
+  {tag:'TYRES',         t:'Pirelli supplies C1 (hardest) to C5 (softest). <strong>Softer = faster</strong> but degrades much quicker.'},
+  {tag:'DRS',           t:'Opening the DRS flap cuts rear drag by ~10%, adding roughly <strong>10–12 km/h</strong> of top speed.'},
+  {tag:'F1 IN SCHOOLS', t:'The best F1 in Schools cars complete 20 m in <strong>~0.7 s</strong>, experiencing peak forces above 20G.'},
+  {tag:'PHYSICS',       t:'Braking from 300 km/h to 0 takes ~4 seconds and loads the driver with up to <strong>5G</strong> of deceleration.'},
+  {tag:'NEUROSCIENCE',  t:'The visual signal travels from retina to primary visual cortex in just <strong>~50ms</strong> via the optic nerve.'},
+  {tag:'F1 IN SCHOOLS', t:'Teams use professional CAD tools like <strong>Autodesk Fusion 360</strong> to design their miniature cars.'},
+  {tag:'ENGINEERING',   t:'F1 engines rev to <strong>15,000 RPM</strong> — a piston reverses direction 500 times every second.'},
+  {tag:'F1 IN SCHOOLS', t:'The fastest recorded F1 in Schools car reached <strong>145 km/h</strong> over a 20 m CO₂ propelled run.'},
+  {tag:'PHYSICS',       t:'At 300 km/h an F1 car covers <strong>83 metres every second</strong> — longer than a football penalty area.'},
+  {tag:'STEM',          t:'Bernoulli\'s equation: <strong>P + ½ρv² = constant</strong>. Faster air = lower pressure — the heart of F1 aero.'},
+  {tag:'F1 IN SCHOOLS', t:'CO₂ cartridges in F1 in Schools cars contain about <strong>8g of gas</strong> — enough to propel a car at 20G+.'},
+  {tag:'MATERIALS',     t:'Titanium skid blocks on the F1 floor create iconic <strong>sparks</strong> when the car bottoms out on the tarmac.'},
+  {tag:'DATA',          t:'F1 tyre temperature sensors update <strong>100 times per second</strong>, helping engineers optimise pit stop windows.'},
+];
+
+const S={IDLE:'IDLE',SEQ:'SEQ',WAIT:'WAIT',REACT:'REACT',RES:'RES',FALSE:'FALSE'};
+let gs=S.IDLE, activeLights=0, rt=null, best=null, worst=null;
+let runs=0, falses=0, isDark=true, tStart=null, timers=[], history=[], compound='soft';
+
+const $=id=>document.getElementById(id);
+const gWrap=$('gantryWrap'),lRow=$('lightsRow'),lNums=$('lightsNumbers');
+const sMain=$('statusMain'),sSub=$('statusSub'),sPR=$('statusPR');
+const btnRow=$('btnRow');
+const lastVal=$('lastVal'),bestVal=$('bestVal'),runsVal=$('runsVal'),badgeBest=$('badgeBest');
+const hBars=$('historyBars'),statAvg=$('statAvg'),statWorst=$('statWorst'),statConsist=$('statConsist'),statFalse=$('statFalse');
+const benchRows=$('benchmarkRows'),youRow=$('youRow'),youTime=$('youTime'),youRank=$('youRank');
+const themeToggle=$('themeToggle'),themeIcon=$('themeIcon'),themeLabel=$('themeLabel');
+const tickerInner=$('tickerInner');
+
+function buildLights(){
+  lRow.innerHTML=''; lNums.innerHTML='';
+  for(let i=0;i<NUM_LIGHTS;i++){
+    const p=document.createElement('div'); p.className='light-pair';
+    p.innerHTML=`<div class="light" id="la${i}"></div><div class="light" id="lb${i}"></div>`;
+    lRow.appendChild(p);
+    const n=document.createElement('div'); n.className='light-num'; n.textContent=i+1;
+    lNums.appendChild(n);
+  }
+}
+function setLights(n,pulse){
+  activeLights=n;
+  for(let i=0;i<NUM_LIGHTS;i++){
+    [$(`la${i}`),$(`lb${i}`)].forEach(el=>{
+      if(!el)return;
+      el.classList.toggle('on',i<n);
+      el.classList.toggle('pulse',i<n&&pulse);
+    });
+  }
+}
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+
+function rating(ms){
+  if(ms<150)return{l:'SUPERHUMAN',c:'c-pur'};
+  if(ms<200)return{l:'ELITE',c:'c-best'};
+  if(ms<250)return{l:'EXCELLENT',c:'c-react'};
+  if(ms<300)return{l:'GOOD',c:'c-blue'};
+  if(ms<400)return{l:'AVERAGE',c:'c-zinc'};
+  return{l:'SLOW',c:'c-false'};
+}
+
+function render(){
+  const click=[S.SEQ,S.WAIT,S.REACT].includes(gs);
+  gWrap.classList.toggle('clickable',click);
+  sMain.className='status-main'; sSub.textContent=''; sSub.className='status-sub'; sPR.textContent=''; sPR.className='status-sub';
+  const isNB=rt!==null&&rt===best&&runs>0;
+  if(gs===S.IDLE){sMain.textContent='PRESS START';sMain.classList.add('c-idle');}
+  else if(gs===S.SEQ){sMain.textContent='GET READY…';sMain.classList.add('c-seq');}
+  else if(gs===S.WAIT){sMain.textContent='HOLD…';sMain.classList.add('c-wait','blink');}
+  else if(gs===S.REACT){sMain.textContent='GO! GO! GO!';sMain.classList.add('c-react','blink');}
+  else if(gs===S.RES){
+    sMain.textContent=rt?`${rt}ms`:'';
+    sMain.classList.add(isNB?'c-best':'c-res');
+    if(rt){const r=rating(rt);sSub.textContent=`◆ ${r.l} ◆`;sSub.classList.add(r.c);}
+    if(isNB){sPR.textContent='★ NEW PERSONAL RECORD ★';sPR.classList.add('c-best','blink');}
+  }
+  else if(gs===S.FALSE){sMain.textContent='FALSE START';sMain.classList.add('c-false');sSub.textContent='TOO EARLY — WAIT FOR LIGHTS OUT';sSub.classList.add('c-zinc');}
+  lastVal.textContent=rt?`${rt}ms`:'—';
+  bestVal.textContent=best?`${best}ms`:'—';
+  runsVal.textContent=runs;
+  badgeBest.classList.toggle('hl',isNB&&gs===S.RES);
+  btnRow.innerHTML='';
+  if([S.IDLE,S.RES,S.FALSE].includes(gs)){
+    const b=document.createElement('button');b.className='btn-start';
+    b.textContent=gs===S.IDLE?'▶  START':'▶  TRY AGAIN';
+    b.addEventListener('click',handleStart);btnRow.appendChild(b);
+  }
+  if(click){
+    const b=document.createElement('button');
+    b.className=gs===S.REACT?'btn-go':'btn-wait';
+    b.textContent=gs===S.REACT?'⚡  TAP NOW!':'● WAIT…';
+    b.addEventListener('click',handleClick);btnRow.appendChild(b);
+  }
+  if(gs!==S.IDLE){
+    const b=document.createElement('button');b.className='btn-reset';b.title='Reset';
+    b.innerHTML=`<svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>`;
+    b.addEventListener('click',handleReset);btnRow.appendChild(b);
+  }
+  renderHistory(); renderSession(); renderBenchmark();
+  if(gs===S.RES&&rt!==null) showInsight(rt);
+  else if(gs===S.IDLE||gs===S.FALSE) hideInsight();
+}
+
+const CCOL={soft:'#dc2626',medium:'#d97706',hard:'#9ca3af',inter:'#16a34a',wet:'#2563eb'};
+function renderHistory(){
+  if(!history.length){hBars.innerHTML='<div class="h-empty">No data yet — complete a run to see your history</div>';return;}
+  const vals=history.map(h=>h.ms), mn=Math.min(...vals), mx=Math.max(...vals), rng=mx-mn||1;
+  hBars.innerHTML='';
+  history.forEach((h,i)=>{
+    const hPct=15+((h.ms-mn)/rng)*70;
+    const isBest=h.ms===best;
+    const col=isBest?'#facc15':(CCOL[h.c]||'#dc2626');
+    const op=0.45+(i/history.length)*0.55;
+    const wrap=document.createElement('div'); wrap.className='hb-wrap';
+    const lbl=document.createElement('div'); lbl.className='hb-val'; lbl.textContent=isBest?'★':`${h.ms}`;
+    const bar=document.createElement('div'); bar.className='hb';
+    bar.style.cssText=`height:${hPct}%;background:${col};opacity:${op};`;
+    wrap.appendChild(lbl); wrap.appendChild(bar); hBars.appendChild(wrap);
+  });
+}
+
+function renderSession(){
+  statFalse.textContent=falses;
+  if(!history.length){statAvg.textContent='—';statWorst.textContent='—';statConsist.textContent='—';return;}
+  const vals=history.map(h=>h.ms);
+  const avg=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  statAvg.textContent=`${avg}ms`; statAvg.className='sc-val '+(avg<200?'g':avg<300?'y':'r');
+  statWorst.textContent=`${Math.max(...vals)}ms`;
+  if(vals.length>1){
+    const sd=Math.round(Math.sqrt(vals.reduce((s,v)=>s+(v-avg)**2,0)/vals.length));
+    statConsist.textContent=`±${sd}ms`; statConsist.className='sc-val '+(sd<20?'g':sd<40?'y':'r');
+  } else { statConsist.textContent='—'; statConsist.className='sc-val'; }
+}
+
+function renderBenchmark(){
+  const BASE=DRIVERS[0].ms, MAX_MS=DRIVERS[DRIVERS.length-1].ms;
+  benchRows.innerHTML='';
+  DRIVERS.forEach((d,i)=>{
+    const pct=((d.ms-BASE)/(MAX_MS-BASE+40))*75+10;
+    const row=document.createElement('div'); row.className='dr-row';
+    row.innerHTML=`
+      <span class="dr-pos">${i+1}</span>
+      <span class="dr-abbr" title="${DRIVER_NAMES[d.abbr]||''}">${d.abbr}</span>
+      <div class="dr-bwrap">
+        <div class="dr-fill" style="width:${pct}%;background:${d.col};opacity:.82"></div>
+        <div class="dr-you" id="dy${i}"></div>
+      </div>
+      <span class="dr-ms">${d.ms}ms</span>`;
+    benchRows.appendChild(row);
+  });
+  if(best!==null){
+    youRow.style.display='flex'; youTime.textContent=`${best}ms`;
+    const rank=DRIVERS.filter(d=>d.ms<=best).length+1;
+    const suf=rank===1?'st':rank===2?'nd':rank===3?'rd':'th';
+    youRank.textContent=`P${rank} — ${rank}${suf} on the grid`;
+    const yPct=Math.min(93,Math.max(5,((best-BASE)/(MAX_MS-BASE+40))*75+10));
+    DRIVERS.forEach((_,i)=>{const el=$(`dy${i}`);if(el){el.style.display='block';el.style.left=`${yPct}%`;}});
+  } else { youRow.style.display='none'; }
+}
+
+function handleStart(){
+  if(![S.IDLE,S.RES,S.FALSE].includes(gs))return;
+  clearTimers(); rt=null; gs=S.SEQ; setLights(0,false); render();
+  for(let i=1;i<=NUM_LIGHTS;i++){const t=setTimeout(()=>setLights(i,false),i*LIGHT_MS);timers.push(t);}
+  const ws=NUM_LIGHTS*LIGHT_MS, rd=MIN_W+Math.random()*(MAX_W-MIN_W);
+  timers.push(setTimeout(()=>{gs=S.WAIT;setLights(NUM_LIGHTS,true);render();},ws));
+  timers.push(setTimeout(()=>{setLights(0,false);gs=S.REACT;tStart=performance.now();render();},ws+rd));
+}
+function handleClick(){
+  if(gs===S.SEQ||gs===S.WAIT){clearTimers();setLights(0,false);gs=S.FALSE;falses++;render();return;}
+  if(gs===S.REACT){
+    const el=Math.round(performance.now()-tStart); rt=el; runs++;
+    if(best===null||el<best)best=el; if(worst===null||el>worst)worst=el;
+    history.push({ms:el,c:compound}); if(history.length>MAX_HIS)history.shift();
+    gs=S.RES; render();
+    enableCo2(el);
+  }
+}
+function handleReset(){clearTimers();gs=S.IDLE;rt=null;setLights(0,false);render();}
+
+gWrap.addEventListener('click',()=>{if([S.SEQ,S.WAIT,S.REACT].includes(gs))handleClick();});
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='Enter'){
+    e.preventDefault();
+    if([S.IDLE,S.RES,S.FALSE].includes(gs))handleStart();
+    else if([S.SEQ,S.WAIT,S.REACT].includes(gs))handleClick();
+  }
+});
+
+const CC=['compound-soft','compound-medium','compound-hard','compound-inter','compound-wet'];
+$('compoundBtns').addEventListener('click',e=>{
+  const b=e.target.closest('.compound-btn'); if(!b)return;
+  compound=b.dataset.c;
+  document.querySelectorAll('.compound-btn').forEach(x=>x.classList.toggle('active',x.dataset.c===compound));
+  CC.forEach(c=>document.body.classList.remove(c));
+  document.body.classList.add(`compound-${compound}`);
+});
+
+const SUN=`<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+const MOON=`<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+function applyTheme(){document.body.classList.toggle('light',!isDark);themeIcon.innerHTML=isDark?SUN:MOON;themeLabel.textContent=isDark?'Light':'Dark';}
+themeToggle.addEventListener('click',()=>{isDark=!isDark;applyTheme();});
+
+function buildTicker(){
+  const all=[...FACTS,...FACTS];
+  tickerInner.innerHTML=all.map(f=>`<span class="ticker-item"><span style="color:var(--accent);font-weight:700;letter-spacing:.18em;font-size:.57rem">${f.tag}</span>&nbsp;&nbsp;${f.t}</span>`).join('');
+}
+
+const INSIGHTS=[
+  {range:[0,150],icon:'🧠',title:'SUPERHUMAN NEURAL PATHWAY',
+   body:'Your <strong>{ms}ms</strong> sits at the absolute boundary of human physiology. Myelinated nerve fibres carry signals at ~70 m/s — covering the ~1.5m retina-to-muscle path in just 21ms. That leaves almost no time for conscious cortical processing.',
+   formula:'Signal velocity ≈ axon diameter × 6 m/s  →  large myelinated axons: ~70 m/s\nMinimum viable reaction time ≈ nerve travel (21ms) + synaptic delays (30ms) + muscle (20ms) ≈ 71ms'},
+  {range:[150,200],icon:'⚡',title:'ELITE ATHLETE NEUROSCIENCE',
+   body:'At <strong>{ms}ms</strong> you match the fastest F1 drivers on the grid. Visual cortex processed the lights-out signal in ~50ms, motor cortex planned and fired in ~80ms, then muscle fibres activated. Elite athletes train to reduce <strong>synaptic delay</strong> between each neuron junction.',
+   formula:'Reaction = Visual processing (~50ms) + Motor planning (~80ms) + Muscle activation (~20ms)\nAt 300 km/h your car travels {dist}m in this time'},
+  {range:[200,250],icon:'🔬',title:'VISUAL PROCESSING PIPELINE',
+   body:'At <strong>{ms}ms</strong>, you match the typical F1 driver range of 190–250ms. Light hit your photoreceptors, converted to electrical impulses, travelled the optic nerve to your occipital lobe, then motor cortex fired the command. An F1 car at 300 km/h would travel <strong>{dist}m</strong> in this window.',
+   formula:'d = v × t  →  300 km/h × {ms}ms = {dist}m\nNeural path: eye → LGN → V1 → premotor cortex → motor cortex → muscle'},
+  {range:[250,350],icon:'🏎️',title:'BRAKING POINT PHYSICS',
+   body:'In <strong>{ms}ms</strong> a car at 300 km/h covers <strong>{dist}m</strong>. Every 10ms saved moves the braking point ~0.83m later, changing corner entry speed and lap time. Engineers analyse telemetry to pinpoint exactly where milliseconds are being lost.',
+   formula:'d = v × t  →  83 m/s × {ms}ms ÷ 1000 = {dist}m at 300 km/h\nOptimal braking point sensitivity: ~0.83m per 10ms'},
+  {range:[350,9999],icon:'🧬',title:'REACTION TIME FACTORS',
+   body:'Your <strong>{ms}ms</strong> can improve significantly with targeted training. Key variables: fatigue adds ~50ms, dehydration +30ms, caffeine −10ms, pre-stimulus preparation −30ms. F1 drivers use daily simulator sessions and tools like this one to maintain <strong>peak neural readiness</strong> across a race weekend.',
+   formula:'Population mean ≈ 250ms  ±  50ms  (untrained)\nElite trained athletes: 180–220ms  ±  15–25ms'},
+];
+
+function showInsight(ms){
+  const card=$('insightCard');
+  const insight=INSIGHTS.find(i=>ms>=i.range[0]&&ms<i.range[1])||INSIGHTS[INSIGHTS.length-1];
+  const dist=((ms/1000)*(300000/3600)).toFixed(1);
+  $('insightIcon').textContent=insight.icon;
+  $('insightTitle').textContent=insight.title;
+  $('insightBody').innerHTML=insight.body.replace(/\{ms\}/g,ms).replace(/\{dist\}/g,dist);
+  $('insightFormula').textContent=insight.formula.replace(/\{ms\}/g,ms).replace(/\{dist\}/g,dist);
+  card.style.display='block';
+  card.style.animation='none';
+  void card.offsetWidth;
+  card.style.animation='';
+}
+function hideInsight(){$('insightCard').style.display='none';}
+
+let co2Running=false;
+function enableCo2(reactionMs){
+  const btn=$('co2LaunchBtn');
+  btn.disabled=false;
+  btn.textContent='🚀 Launch CO₂ Car';
+  btn.onclick=()=>launchCo2(reactionMs);
+}
+function launchCo2(reactionMs){
+  if(co2Running)return;
+  co2Running=true;
+  const btn=$('co2LaunchBtn');
+  btn.disabled=true; btn.textContent='Racing…';
+  const car=$('co2CarSprite'), prog=$('co2Progress');
+  const outer=$('co2TrackOuter');
+  car.style.left='28px'; prog.style.width='0';
+  $('co2RaceTime').textContent='—'; $('co2TopSpeed').textContent='—'; $('co2PeakG').textContent='—';
+  const trackW=outer.offsetWidth-58;
+  const RACE_MS=700;
+  const launchDelay=Math.min(reactionMs*0.45,450);
+  setTimeout(()=>{
+    let t0=null;
+    function frame(ts){
+      if(!t0)t0=ts;
+      const elapsed=ts-t0;
+      const p=Math.min(elapsed/RACE_MS,1);
+      const eased=p<0.5?2*p*p:-1+(4-2*p)*p;
+      car.style.left=(28+eased*(trackW-28))+'px';
+      prog.style.width=(eased*100)+'%';
+      if(p<1){requestAnimationFrame(frame);}
+      else{
+        const avgSpeedMs=20/(RACE_MS/1000);
+        $('co2RaceTime').textContent=(RACE_MS/1000).toFixed(2)+'s';
+        $('co2TopSpeed').textContent=Math.round(avgSpeedMs*3.6*1.4)+' km/h';
+        $('co2PeakG').textContent='~'+Math.min(24,Math.round((avgSpeedMs/0.15)/9.81))+'G';
+        btn.disabled=false; btn.textContent='🔄 Launch Again';
+        btn.onclick=()=>launchCo2(reactionMs);
+        co2Running=false;
+      }
+    }
+    requestAnimationFrame(frame);
+  },launchDelay);
+}
+
+let pitState='idle', pitCurrent=0, pitTimes=[], pitOverallBest=null, pitBoltStart=null;
+const PIT_BOLTS=4;
+const pitGrid=$('pitGrid');
+const pitTotalEl=$('pitTotal'), pitBestEl=$('pitBest'), pitAvgEl=$('pitAvgBolt');
+const pitStartBtn=$('pitStartBtn');
+
+function getPitBolts(){return Array.from(pitGrid.querySelectorAll('.pit-bolt-btn'));}
+function resetPitVisual(){
+  getPitBolts().forEach((b,i)=>{
+    b.classList.remove('active','done');
+    const t=$(`pbt${i}`); if(t)t.textContent='';
+  });
+}
+function startPitStop(){
+  if(pitState==='running')return;
+  pitState='running'; pitCurrent=0; pitTimes=[];
+  resetPitVisual();
+  pitStartBtn.style.display='none';
+  pitTotalEl.textContent='—'; pitAvgEl.textContent='—';
+  const bolts=getPitBolts();
+  bolts[0].classList.add('active');
+  pitBoltStart=performance.now();
+}
+pitGrid.addEventListener('click',e=>{
+  if(pitState!=='running')return;
+  const b=e.target.closest('.pit-bolt-btn');
+  if(!b||!b.classList.contains('active'))return;
+  const now=performance.now();
+  const elapsed=now-pitBoltStart;
+  pitTimes.push(elapsed);
+  b.classList.remove('active'); b.classList.add('done');
+  const tEl=$(`pbt${pitCurrent}`);
+  if(tEl)tEl.textContent=(elapsed/1000).toFixed(2)+'s';
+  pitCurrent++;
+  if(pitCurrent<PIT_BOLTS){
+    const bolts=getPitBolts();
+    bolts[pitCurrent].classList.add('active');
+    pitBoltStart=now;
+  } else {
+    pitState='done';
+    const total=pitTimes.reduce((a,b)=>a+b,0);
+    pitTotalEl.textContent=(total/1000).toFixed(3)+'s';
+    pitAvgEl.textContent=(total/PIT_BOLTS/1000).toFixed(3)+'s';
+    if(pitOverallBest===null||total<pitOverallBest)pitOverallBest=total;
+    pitBestEl.textContent=(pitOverallBest/1000).toFixed(3)+'s';
+    pitStartBtn.style.display='block'; pitStartBtn.textContent='▶ Try Again';
+  }
+});
+pitStartBtn.addEventListener('click',startPitStop);
+
+const QUIZ=[
+  {q:'What force keeps an F1 car on the track at high speed?',opts:['Gravity only','Downforce from wings','Friction alone','Magnetic grip'],a:1,exp:'Wings create <strong>downforce</strong> using Bernoulli\'s principle — faster-moving air over the lower wing surface creates lower pressure, generating a force that pushes the car into the track.'},
+  {q:'F1 in Schools CO₂ cars race over what distance?',opts:['10 metres','50 metres','20 metres','100 metres'],a:2,exp:'F1 in Schools cars race over exactly <strong>20 metres</strong>, reaching speeds over 140 km/h in ~0.7 seconds and experiencing peak G-forces above 20G.'},
+  {q:'What does CFD stand for in F1 engineering?',opts:['Carbon Fibre Design','Computational Fluid Dynamics','Circuit Force Distribution','Cooling Fan Drive'],a:1,exp:'<strong>Computational Fluid Dynamics</strong> uses supercomputers to simulate airflow around the car, letting engineers test thousands of aerodynamic designs without physical prototypes.'},
+  {q:'The FIA considers a reaction under ___ ms a false start:',opts:['200ms','150ms','80ms','100ms'],a:3,exp:'Under <strong>100ms</strong> is classified as a false start because the nerve signal physically cannot travel from eyes to muscles that quickly — it violates the known minimum physiological reflex time.'},
+  {q:'Carbon fibre composites compared to structural steel are:',opts:['Heavier but more flexible','Lighter and stronger per unit weight','Same weight but much cheaper','Used only for engine components'],a:1,exp:'Carbon fibre is roughly <strong>5× stronger than steel at ¼ the weight</strong> — the critical combination that lets F1 cars be both light and crashworthy.'},
+  {q:'What does DRS stand for?',opts:['Driver Reflex System','Dynamic Rear Suspension','Drag Reduction System','Downforce Regulation Switch'],a:2,exp:'The <strong>Drag Reduction System</strong> opens a flap in the rear wing, reducing aerodynamic drag by ~10% and adding 10–12 km/h of top speed on eligible straights.'},
+  {q:'Newton\'s 2nd Law (F = ma) tells F1 engineers that:',opts:['Heavier cars corner faster','Less mass means more acceleration for the same force','Downforce reduces lateral acceleration','Friction does not affect lap time'],a:1,exp:'<strong>F = ma</strong>: for a given engine output force, reducing mass directly increases acceleration — which is why F1 cars are built to the minimum weight limit of 798 kg including driver.'},
+  {q:'What propels F1 in Schools miniature racing cars?',opts:['Electric motor','Rubber band','CO₂ gas cartridge','Compressed nitrogen'],a:2,exp:'A standard <strong>CO₂ cartridge</strong> (~8g) is pierced at the start gate, releasing compressed gas that propels the miniature car to over 140 km/h across the 20m track.'},
+  {q:'G-force is defined as:',opts:['1 gram of force per kg of car mass','Acceleration relative to Earth\'s gravitational field (9.81 m/s²)','Ground clearance in millimetres','Gear ratio at a given RPM'],a:1,exp:'<strong>1G = 9.81 m/s²</strong> — Earth\'s standard gravitational acceleration. F1 drivers experience 4–6G in high-speed corners and 5G+ under heavy braking.'},
+  {q:'Bernoulli\'s equation is used in F1 aerodynamics to:',opts:['Calculate fuel consumption','Explain how faster airflow creates lower pressure, generating downforce','Measure tyre temperature','Determine gearbox shift points'],a:1,exp:'<strong>P + ½ρv² = constant</strong> (Bernoulli): faster airflow has lower pressure. F1 wings exploit this — the lower surface sees faster air and lower pressure, creating a pressure difference that generates downforce.'},
+  {q:'An F1 engine turning 15,000 RPM fires each cylinder:',opts:['15,000 times per second','250 times per second','125 times per second','7,500 times per second'],a:2,exp:'At 15,000 RPM in a 4-stroke engine, each cylinder fires every 2 revolutions: 15,000 ÷ 2 ÷ 60 = <strong>125 times per second</strong>. With 8 cylinders that\'s 1,000 combustion events per second total.'},
+  {q:'In F1 in Schools, teams are judged on:',opts:['Car speed only','Car speed and design drawings','Car design, manufacture, marketing, verbal presentation and race performance','Engineering drawings and written exam'],a:2,exp:'F1 in Schools is a full STEM competition judged across <strong>five disciplines</strong>: Engineering Design, Manufacturing, Marketing & Media, Verbal Presentation, and Race Performance — simulating a real motorsport team.'},
+];
+
+let quizIdx=0, quizScore=0, quizTotal=0, quizStreak=0, quizAnswered=false;
+const quizOrder=[...Array(QUIZ.length).keys()].sort(()=>Math.random()-.5);
+
+function loadQuiz(){
+  const q=QUIZ[quizOrder[quizIdx%quizOrder.length]];
+  $('quizQ').textContent=q.q;
+  $('quizExp').style.display='none';
+  $('quizNext').style.display='none';
+  $('quizScoreDisplay').textContent=`Score: ${quizScore} / ${quizTotal}`;
+  $('quizStreak').textContent=quizStreak>1?`🔥 ${quizStreak} in a row`:'';
+  quizAnswered=false;
+  const optsEl=$('quizOpts'); optsEl.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='quiz-opt'; btn.textContent=opt;
+    btn.addEventListener('click',()=>answerQuiz(i,q));
+    optsEl.appendChild(btn);
+  });
+}
+function answerQuiz(chosen,q){
+  if(quizAnswered)return;
+  quizAnswered=true; quizTotal++;
+  const opts=Array.from($('quizOpts').children);
+  opts.forEach((o,i)=>{
+    o.disabled=true;
+    if(i===q.a) o.classList.add(chosen===q.a?'correct':'reveal');
+    else if(i===chosen) o.classList.add('wrong');
+  });
+  if(chosen===q.a){quizScore++;quizStreak++;}else{quizStreak=0;}
+  $('quizExp').innerHTML=q.exp;
+  $('quizExp').style.display='block';
+  $('quizNext').style.display='block';
+  $('quizScoreDisplay').textContent=`Score: ${quizScore} / ${quizTotal}`;
+  $('quizStreak').textContent=quizStreak>1?`🔥 ${quizStreak} in a row`:'';
+}
+$('quizNext').addEventListener('click',()=>{quizIdx++;loadQuiz();});
+
+buildLights(); buildTicker(); applyTheme(); renderBenchmark(); render(); loadQuiz();
+</script>
+</body>
+</html>
